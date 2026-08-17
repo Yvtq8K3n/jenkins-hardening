@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "benchmark": {
+    "id": "jenkins-official",
+    "name": "Jenkins.io Official Security Book",
+    "url": "https://www.jenkins.io/doc/book/security/"
+  },
+  "controls": [
+    {"id": "SEC-1", "title": "Security Enabled", "category": "Access Control & Authorization"},
+    {"id": "SEC-2", "title": "Anonymous Access Denied", "category": "Access Control & Authorization"},
+    {"id": "SEC-2b", "title": "Authorization Strategy Is Restrictive", "category": "Access Control & Authorization"},
+    {"id": "SEC-3a", "title": "Self-Registration Disabled", "category": "Access Control & Authorization"},
+    {"id": "SEC-3b", "title": "Matrix or Role-Based Plugin When Realm Allows Untrusted Accounts", "category": "Access Control & Authorization"},
+    {"id": "SEC-4", "title": "Overall/Read Permission Not Granted Broadly", "category": "Access Control & Authorization"},
+    {"id": "SEC-5a", "title": "Audit Token Not Over-Privileged", "category": "Access Control & Authorization"},
+    {"id": "SEC-5b", "title": "Admin Access Limited", "category": "Access Control & Authorization"},
+    {"id": "SEC-6", "title": "Built-in Node Isolated from Limited-Permission Users", "category": "Access Control & Authorization"},
+    {"id": "SEC-7a", "title": "HTTPS Encryption In Use", "category": "Access Control & Authorization"},
+    {"id": "SEC-7b", "title": "Reverse Proxy Hardening", "category": "Access Control & Authorization"},
+    {"id": "SEC-8", "title": "CSRF Protection Enabled", "category": "CSRF & Request Security"},
+    {"id": "SEC-9", "title": "API Clients Use API Token Authentication", "category": "CSRF & Request Security"},
+    {"id": "SEC-10a", "title": "Inbound TCP Agent Port Disabled", "category": "Agent & Protocol Security"},
+    {"id": "SEC-10b", "title": "Agent Protocol & Firewall Correctly Restricted", "category": "Agent & Protocol Security"}
+  ]
+}

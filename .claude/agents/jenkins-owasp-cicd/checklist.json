@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "benchmark": {
+    "id": "owasp-cicd",
+    "name": "OWASP Top 10 CI/CD Security Risks",
+    "url": "https://owasp.org/www-project-top-10-ci-cd-security-risks/"
+  },
+  "controls": [
+    {"id": "CICD-SEC-1", "title": "Insufficient Flow Control Mechanisms", "category": "Insufficient Flow Control Mechanisms"},
+    {"id": "CICD-SEC-2", "title": "Inadequate Identity and Access Management", "category": "Inadequate Identity and Access Management"},
+    {"id": "CICD-SEC-3", "title": "Dependency Chain Abuse", "category": "Dependency Chain Abuse"},
+    {"id": "CICD-SEC-4", "title": "Poisoned Pipeline Execution", "category": "Poisoned Pipeline Execution"},
+    {"id": "CICD-SEC-5", "title": "Insufficient PBAC", "category": "Insufficient PBAC (Pipeline-Based Access Control)"},
+    {"id": "CICD-SEC-6", "title": "Insufficient Credential Hygiene", "category": "Insufficient Credential Hygiene"},
+    {"id": "CICD-SEC-7", "title": "Insecure System Configuration", "category": "Insecure System Configuration"},
+    {"id": "CICD-SEC-8", "title": "Ungoverned Usage of 3rd Party Services", "category": "Ungoverned Usage of 3rd Party Services"},
+    {"id": "CICD-SEC-9", "title": "Improper Artifact Integrity Validation", "category": "Improper Artifact Integrity Validation"},
+    {"id": "CICD-SEC-10", "title": "Insufficient Logging and Visibility", "category": "Insufficient Logging and Visibility"}
+  ]
+}

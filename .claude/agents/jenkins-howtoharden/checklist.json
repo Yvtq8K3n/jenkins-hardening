@@ -1,0 +1,130 @@
+{
+  "schema_version": "1.0",
+  "benchmark": {
+    "id": "howtoharden",
+    "name": "howtoharden.com Hardening Guide",
+    "url": "https://howtoharden.com/guides/jenkins/"
+  },
+  "controls": [
+    {
+      "id": "HTH-1.1",
+      "title": "Enable Authentication",
+      "category": "Authentication & Access Control"
+    },
+    {
+      "id": "HTH-1.2",
+      "title": "Use Enterprise Authentication (LDAP/SAML/Kerberos)",
+      "category": "Authentication & Access Control"
+    },
+    {
+      "id": "HTH-1.3a",
+      "title": "Disable Self-Registration",
+      "category": "Authentication & Access Control"
+    },
+    {
+      "id": "HTH-1.3b",
+      "title": "Configure Session Timeout",
+      "category": "Authentication & Access Control"
+    },
+    {
+      "id": "HTH-2.1",
+      "title": "Restrict Anonymous Read Access",
+      "category": "Authorization & Permissions"
+    },
+    {
+      "id": "HTH-2.2",
+      "title": "Use Fine-Grained Authorization Strategy",
+      "category": "Authorization & Permissions"
+    },
+    {
+      "id": "HTH-2.3",
+      "title": "Implement Role-Based Access Control",
+      "category": "Authorization & Permissions"
+    },
+    {
+      "id": "HTH-2.4a",
+      "title": "Audit Token Has Minimal Privileges",
+      "category": "Authorization & Permissions"
+    },
+    {
+      "id": "HTH-2.4b",
+      "title": "Restrict Administrative Access",
+      "category": "Authorization & Permissions"
+    },
+    {
+      "id": "HTH-3.1",
+      "title": "Enable Agent-to-Controller Access Control",
+      "category": "Controller & Agent Security"
+    },
+    {
+      "id": "HTH-3.2",
+      "title": "Disable Builds on Controller",
+      "category": "Controller & Agent Security"
+    },
+    {
+      "id": "HTH-3.3",
+      "title": "Use Ephemeral Cloud-Based Agents",
+      "category": "Controller & Agent Security"
+    },
+    {
+      "id": "HTH-3.4a",
+      "title": "Use HTTPS for Jenkins Transport",
+      "category": "Controller & Agent Security"
+    },
+    {
+      "id": "HTH-3.4b",
+      "title": "Disable Legacy Agent Protocols",
+      "category": "Controller & Agent Security"
+    },
+    {
+      "id": "HTH-3.5",
+      "title": "Prefer WebSocket for Inbound Agents",
+      "category": "Controller & Agent Security"
+    },
+    {
+      "id": "HTH-4.1",
+      "title": "Enable CSRF Protection",
+      "category": "Pipeline Security"
+    },
+    {
+      "id": "HTH-4.2a",
+      "title": "Install Credentials Binding Plugin",
+      "category": "Pipeline Security"
+    },
+    {
+      "id": "HTH-4.2b",
+      "title": "Use Appropriate Credential Types & Scoping",
+      "category": "Pipeline Security"
+    },
+    {
+      "id": "HTH-4.3a",
+      "title": "Install Script Security Plugin",
+      "category": "Pipeline Security"
+    },
+    {
+      "id": "HTH-4.3b",
+      "title": "Review & Minimize Script Approvals",
+      "category": "Pipeline Security"
+    },
+    {
+      "id": "HTH-4.4",
+      "title": "Enforce Hardened Jenkinsfile Patterns",
+      "category": "Pipeline Security"
+    },
+    {
+      "id": "HTH-5.1",
+      "title": "Enable Comprehensive Audit Logging",
+      "category": "Monitoring & Compliance"
+    },
+    {
+      "id": "HTH-5.2a",
+      "title": "Keep Plugins Current",
+      "category": "Monitoring & Compliance"
+    },
+    {
+      "id": "HTH-5.2b",
+      "title": "Maintain Supported Jenkins Version",
+      "category": "Monitoring & Compliance"
+    }
+  ]
+}

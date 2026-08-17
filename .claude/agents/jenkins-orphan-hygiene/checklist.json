@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "benchmark": {
+    "id": "orphan-hygiene",
+    "name": "Operational Lifecycle Hygiene",
+    "url": "https://www.jenkins.io/doc/book/managing/nodes/"
+  },
+  "controls": [
+    {"id": "ORPH-1", "title": "No Never-Built Jobs", "category": "Job & Pipeline Hygiene"},
+    {"id": "ORPH-2", "title": "No Long-Stale Active Jobs", "category": "Job & Pipeline Hygiene"},
+    {"id": "ORPH-3", "title": "No Lingering Disabled Jobs", "category": "Job & Pipeline Hygiene"},
+    {"id": "ORPH-4", "title": "Build Retention Policy Configured", "category": "Job & Pipeline Hygiene"},
+    {"id": "ORPH-5", "title": "Dormant User Accounts Reviewed", "category": "Account Hygiene"},
+    {"id": "ORPH-6", "title": "Jobs Reference Live SCM Sources", "category": "Job & Pipeline Hygiene"},
+    {"id": "ORPH-7", "title": "No Long-Offline Build Agents", "category": "Infrastructure & Credential Hygiene"},
+    {"id": "ORPH-8", "title": "No Installed-But-Inactive Plugins", "category": "Infrastructure & Credential Hygiene"},
+    {"id": "ORPH-9", "title": "No Empty Views", "category": "Job & Pipeline Hygiene"},
+    {"id": "ORPH-10", "title": "No Stuck/Blocked Queue Items", "category": "Job & Pipeline Hygiene"},
+    {"id": "ORPH-11", "title": "Multibranch Pipeline Branches Reference Live SCM Branches", "category": "Job & Pipeline Hygiene"},
+    {"id": "ORPH-12", "title": "Dormant Admin-Privileged Accounts Reviewed", "category": "Account Hygiene"},
+    {"id": "ORPH-13", "title": "Unused/Orphaned Credentials", "category": "Infrastructure & Credential Hygiene"},
+    {"id": "ORPH-14", "title": "Jenkins Core & Plugin Versions Not End-of-Life", "category": "Infrastructure & Credential Hygiene"}
+  ]
+}
