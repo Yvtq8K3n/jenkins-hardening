@@ -1,6 +1,6 @@
 # jenkins-hardening
 
-A multi-agent Jenkins hardening audit system that evaluates live Jenkins instances against three
+An agentic team Jenkins hardening audit system that evaluates live Jenkins instances against four
 established security benchmarks, plus operational-lifecycle hygiene:
 
 1. **howtoharden.com** — Practical hardening guide with L1/L2 tiered controls
@@ -72,8 +72,8 @@ This system consists of:
 
 **Note:** `.env` is ignored by git to prevent accidental secret commits. Each developer should create their own `.env` file.
 
-The skill will:
-1. Launch four audit agents in parallel (howtoharden, Jenkins.io official, OWASP CI/CD, orphan-hygiene)
+The agentic team will:
+1. Deploy four audit agents in parallel (howtoharden, Jenkins.io official, OWASP CI/CD, orphan-hygiene)
 2. Each agent gathers evidence via `jenkins_api.py` over the Jenkins REST API
 3. Each agent writes findings to a JSON artifact
 4. Synthesize findings into a consolidated HTML report

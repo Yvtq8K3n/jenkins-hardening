@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jenkins Hardening Audit Report</title>
+  <style>
+    :root {
+      --surface-color: #fcfcfb;
+      --page-bg: #f9f9f7;
+      --ink-primary: #0b0b0b;
+      --ink-secondary: #52514e;
+      --ink-muted: #898781;
+      --accent-pass: #0ca30c;
+      --accent-fail: #d03b3b;
+      --accent-manual: #fab219;
+      --border-color: #e5e5e0;
+      --code-bg: #f1f1f0;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --surface-color: #1a1a19;
+        --page-bg: #0d0d0c;
+        --ink-primary: #ffffff;
+        --ink-secondary: #c3c2b7;
+        --ink-muted: #52514e;
+        --border-color: #2d2d2c;
+        --code-bg: #23231f;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--page-bg);
+      color: var(--ink-primary);
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    header {
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin: 0 0 10px 0;
+      line-height: 1.2;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 30px 0 15px 0;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 20px 0 10px 0;
+    }
+
+    .metadata {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+    .metadata-item {
+      background: var(--surface-color);
+      padding: 10px 12px;
+      border-radius: 4px;
+      border-left: 3px solid var(--accent-manual);
+    }
+
+    .metadata-label {
+      font-weight: 600;
+      color: var(--ink-secondary);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .metadata-value {
+      color: var(--ink-primary);
+      word-break: break-all;
+    }
+
+    .executive-summary {
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-tile {
+      text-align: center;
+      padding: 12px;
+      background: var(--page-bg);
+      border-radius: 4px;
+      border-left: 3px solid var(--accent-manual);
+    }
+
+    .stat-tile.fail {
+      border-left-color: var(--accent-fail);
+    }
+
+    .stat-tile.manual {
+      border-left-color: var(--accent-manual);
+    }
+
+    .stat-tile.pass {
+      border-left-color: var(--accent-pass);
+    }
+
+    .stat-number {
+      font-size: 24px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--ink-secondary);
+      margin-top: 4px;
+    }
+
+    .chart-container {
+      margin: 20px 0;
+      overflow-x: auto;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    .badge.critical {
+      background: var(--accent-fail);
+      color: white;
+    }
+
+    .badge.needs-review {
+      background: var(--accent-manual);
+      color: #0b0b0b;
+    }
+
+    .badge.pass {
+      background: var(--accent-pass);
+      color: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    th {
+      background: var(--page-bg);
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--ink-secondary);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 14px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .status-pass {
+      background: var(--accent-pass);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      display: inline-block;
+    }
+
+    .status-fail {
+      background: var(--accent-fail);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      display: inline-block;
+    }
+
+    .status-manual {
+      background: var(--accent-manual);
+      color: #0b0b0b;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      display: inline-block;
+    }
+
+    .status-lack\ privs {
+      background: #9b7ccf;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      display: inline-block;
+    }
+
+    details {
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 0;
+      margin-bottom: 12px;
+    }
+
+    summary {
+      padding: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    summary:hover {
+      background: var(--page-bg);
+    }
+
+    details[open] > summary {
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .details-content {
+      padding: 12px;
+    }
+
+    .remediation-section {
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .remediation-section h4 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--ink-secondary);
+    }
+
+    .control-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .control-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 14px;
+    }
+
+    .control-list li:last-child {
+      border-bottom: none;
+    }
+
+    .control-id {
+      font-weight: 600;
+      color: var(--ink-secondary);
+    }
+
+    footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+      font-size: 13px;
+      color: var(--ink-secondary);
+    }
+
+    a {
+      color: var(--ink-primary);
+      text-decoration: underline;
+    }
+
+    code {
+      background: var(--code-bg);
+      padding: 2px 4px;
+      border-radius: 2px;
+      font-family: "SF Mono", Monaco, Menlo, Courier, monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Jenkins Hardening Audit Report</h1>
+      <div class="metadata">
+        <div class="metadata-item">
+          <div class="metadata-label">Target URL</div>
+          <div class="metadata-value"><code>http://localhost:8080/</code></div>
+        </div>
+        <div class="metadata-item">
+          <div class="metadata-label">Audit User</div>
+          <div class="metadata-value">pwned</div>
+        </div>
+        <div class="metadata-item">
+          <div class="metadata-label">Generated At (UTC)</div>
+          <div class="metadata-value">2026-08-17T04:32:00Z</div>
+        </div>
+        <div class="metadata-item">
+          <div class="metadata-label">Benchmarks</div>
+          <div class="metadata-value"><a href="https://howtoharden.com/guides/jenkins/">howtoharden.com Hardening Guide</a>, <a href="https://www.jenkins.io/doc/book/security/">Jenkins.io Official Security</a>, <a href="https://owasp.org/www-project-top-10-ci-cd-security-risks/">OWASP Top 10 CI/CD Security Risks</a>, CI/CD Resource Lifecycle Hygiene <em>(Custom Rules)</em></div>
+        </div>
+      </div>
+    </header>
+    <section class="executive-summary">
+      <h2>Executive Summary</h2>
+      <div class="stat-row">
+        <div class="stat-tile">
+          <div class="stat-number" style="font-variant-numeric: tabular-nums;">63</div>
+          <div class="stat-label">Total Controls</div>
+        </div>
+        <div class="stat-tile fail">
+          <div class="stat-number" style="color: var(--accent-fail); font-variant-numeric: tabular-nums;">23</div>
+          <div class="stat-label">FAIL</div>
+        </div>
+        <div class="stat-tile manual">
+          <div class="stat-number" style="color: #9b7ccf; font-variant-numeric: tabular-nums;">0</div>
+          <div class="stat-label">LACK PRIVS</div>
+        </div>
+        <div class="stat-tile manual">
+          <div class="stat-number" style="color: var(--accent-manual); font-variant-numeric: tabular-nums;">19</div>
+          <div class="stat-label">MANUAL</div>
+        </div>
+        <div class="stat-tile pass">
+          <div class="stat-number" style="color: var(--accent-pass); font-variant-numeric: tabular-nums;">21</div>
+          <div class="stat-label">PASS</div>
+        </div>
+      </div>
+      <div class="chart-container">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px;">
+<rect x="80" y="0" width="182.53968253968253" height="60" fill="#d03b3b" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" rx="4" />
+<text x="171.26984126984127" y="34.0" text-anchor="middle" fill="#ffffff" font-weight="600" font-size="11">23</text>
+<rect x="264.53968253968253" y="0" width="150.79365079365078" height="60" fill="#fab219" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" rx="4" />
+<text x="339.93650793650795" y="34.0" text-anchor="middle" fill="#0b0b0b" font-weight="600" font-size="11">19</text>
+<rect x="417.3333333333333" y="0" width="166.66666666666666" height="60" fill="#0ca30c" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" rx="4" />
+<text x="500.66666666666663" y="34.0" text-anchor="middle" fill="#ffffff" font-weight="600" font-size="11">21</text>
+<text x="5" y="34.0" text-anchor="start" fill="var(--ink-primary, #0b0b0b)" font-size="12" font-weight="500">Total</text>
+<rect x="80" y="68" width="208.33333333333334" height="60" fill="#d03b3b" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" rx="4" />
+<text x="184.16666666666669" y="102.0" text-anchor="middle" fill="#ffffff" font-weight="600" font-size="11">10</text>
+<rect x="290.33333333333337" y="68" width="104.16666666666667" height="60" fill="#fab219" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" rx="4" />
+<text x="342.4166666666667" y="102.0" text-anchor="middle" fill="#0b0b0b" font-weight="600" font-size="11">5</text>
+<rect x="396.50000000000006" y="68" width="187.5" height="60" fill="#0ca30c" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" rx="4" />
+<text x="490.25000000000006" y="102.0" text-anchor="middle" fill="#ffffff" font-weight="600" font-size="11">9</text>
+<text x="5" y="102.0" text-anchor="start" fill="var(--ink-primary, #0b0b0b)" font-size="12" font-weight="500">howtoharden</text>
+<rect x="80" y="136" width="100.0" height="60" fill="#d03b3b" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" rx="4" />
+<text x="130.0" y="170.0" text-anchor="middle" fill="#ffffff" font-weight="600" font-size="11">3</text>
+<rect x="182.0" y="136" width="166.66666666666666" height="60" fill="#fab219" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" rx="4" />
+<text x="265.3333333333333" y="170.0" text-anchor="middle" fill="#0b0b0b" font-weight="600" font-size="11">5</text>
+<rect x="350.66666666666663" y="136" width="233.33333333333334" height="60" fill="#0ca30c" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" rx="4" />
+<text x="467.3333333333333" y="170.0" text-anchor="middle" fill="#ffffff" font-weight="600" font-size="11">7</text>
+<text x="5" y="170.0" text-anchor="start" fill="var(--ink-primary, #0b0b0b)" font-size="12" font-weight="500">official-security</text>
+<rect x="80" y="204" width="350.0" height="60" fill="#d03b3b" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" rx="4" />
+<text x="255.0" y="238.0" text-anchor="middle" fill="#ffffff" font-weight="600" font-size="11">7</text>
+<rect x="432.0" y="204" width="150.0" height="60" fill="#fab219" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" rx="4" />
+<text x="507.0" y="238.0" text-anchor="middle" fill="#0b0b0b" font-weight="600" font-size="11">3</text>
+<text x="5" y="238.0" text-anchor="start" fill="var(--ink-primary, #0b0b0b)" font-size="12" font-weight="500">owasp-cicd</text>
+<rect x="80" y="272" width="107.14285714285714" height="60" fill="#d03b3b" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" rx="4" />
+<text x="133.57142857142856" y="306.0" text-anchor="middle" fill="#ffffff" font-weight="600" font-size="11">3</text>
+<rect x="189.14285714285714" y="272" width="214.28571428571428" height="60" fill="#fab219" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" rx="4" />
+<text x="296.2857142857143" y="306.0" text-anchor="middle" fill="#0b0b0b" font-weight="600" font-size="11">6</text>
+<rect x="405.42857142857144" y="272" width="178.57142857142858" height="60" fill="#0ca30c" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" rx="4" />
+<text x="494.7142857142857" y="306.0" text-anchor="middle" fill="#ffffff" font-weight="600" font-size="11">5</text>
+<text x="5" y="306.0" text-anchor="start" fill="var(--ink-primary, #0b0b0b)" font-size="12" font-weight="500">orphan-hygiene</text>
+</svg>
+      </div>
+      <h3 style="margin-top: 30px; margin-bottom: 20px;">Breakdown by Benchmark</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 20px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 20px; margin: 15px 0;">
+      <div style="flex-shrink: 0;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100px; height: 100px;">
+<path d="M 50.0 50.0 L 50.0 0.0 A 50.0 50.0 0 0 1 74.99999999999997 93.30127018922195 Z" fill="#d03b3b" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" />
+<path d="M 50.0 50.0 L 74.99999999999997 93.30127018922195 A 50.0 50.0 0 0 1 14.644660940672594 85.35533905932735 Z" fill="#fab219" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" />
+<path d="M 50.0 50.0 L 14.644660940672594 85.35533905932735 A 50.0 50.0 0 0 1 50.000000000000036 0.0 Z" fill="#0ca30c" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" />
+</svg>
+      </div>
+      <div style="font-size: 13px;">
+        <div style="margin-bottom: 8px;"><strong style="color: var(--ink-primary);">howtoharden.com Hardening Guide</strong></div>
+        <div style="margin-bottom: 4px;"><span style="display: inline-block; width: 12px; height: 12px; background: #d03b3b; border-radius: 2px; margin-right: 6px;"></span>FAIL: 10</div>
+        <div style="margin-bottom: 4px;"><span style="display: inline-block; width: 12px; height: 12px; background: #9b7ccf; border-radius: 2px; margin-right: 6px;"></span>LACK PRIVS: 0</div>
+        <div style="margin-bottom: 4px;"><span style="display: inline-block; width: 12px; height: 12px; background: #fab219; border-radius: 2px; margin-right: 6px;"></span>MANUAL: 5</div>
+        <div><span style="display: inline-block; width: 12px; height: 12px; background: #0ca30c; border-radius: 2px; margin-right: 6px;"></span>PASS: 9</div>
+      </div>
+    </div>
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 20px; margin: 15px 0;">
+      <div style="flex-shrink: 0;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100px; height: 100px;">
+<path d="M 50.0 50.0 L 50.0 0.0 A 50.0 50.0 0 0 1 97.55282581475768 34.54915028125263 Z" fill="#d03b3b" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" />
+<path d="M 50.0 50.0 L 97.55282581475768 34.54915028125263 A 50.0 50.0 0 0 1 39.604415459112055 98.90738003669028 Z" fill="#fab219" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" />
+<path d="M 50.0 50.0 L 39.604415459112055 98.90738003669028 A 50.0 50.0 0 0 1 49.99999999999994 0.0 Z" fill="#0ca30c" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" />
+</svg>
+      </div>
+      <div style="font-size: 13px;">
+        <div style="margin-bottom: 8px;"><strong style="color: var(--ink-primary);">Jenkins.io Official Security</strong></div>
+        <div style="margin-bottom: 4px;"><span style="display: inline-block; width: 12px; height: 12px; background: #d03b3b; border-radius: 2px; margin-right: 6px;"></span>FAIL: 3</div>
+        <div style="margin-bottom: 4px;"><span style="display: inline-block; width: 12px; height: 12px; background: #9b7ccf; border-radius: 2px; margin-right: 6px;"></span>LACK PRIVS: 0</div>
+        <div style="margin-bottom: 4px;"><span style="display: inline-block; width: 12px; height: 12px; background: #fab219; border-radius: 2px; margin-right: 6px;"></span>MANUAL: 5</div>
+        <div><span style="display: inline-block; width: 12px; height: 12px; background: #0ca30c; border-radius: 2px; margin-right: 6px;"></span>PASS: 7</div>
+      </div>
+    </div>
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 20px; margin: 15px 0;">
+      <div style="flex-shrink: 0;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100px; height: 100px;">
+<path d="M 50.0 50.0 L 50.0 0.0 A 50.0 50.0 0 1 1 2.447174185242332 65.45084971874739 Z" fill="#d03b3b" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" />
+<path d="M 50.0 50.0 L 2.447174185242332 65.45084971874739 A 50.0 50.0 0 0 1 49.99999999999999 0.0 Z" fill="#fab219" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" />
+</svg>
+      </div>
+      <div style="font-size: 13px;">
+        <div style="margin-bottom: 8px;"><strong style="color: var(--ink-primary);">OWASP Top 10 CI/CD Security Risks</strong></div>
+        <div style="margin-bottom: 4px;"><span style="display: inline-block; width: 12px; height: 12px; background: #d03b3b; border-radius: 2px; margin-right: 6px;"></span>FAIL: 7</div>
+        <div style="margin-bottom: 4px;"><span style="display: inline-block; width: 12px; height: 12px; background: #9b7ccf; border-radius: 2px; margin-right: 6px;"></span>LACK PRIVS: 0</div>
+        <div style="margin-bottom: 4px;"><span style="display: inline-block; width: 12px; height: 12px; background: #fab219; border-radius: 2px; margin-right: 6px;"></span>MANUAL: 3</div>
+        <div><span style="display: inline-block; width: 12px; height: 12px; background: #0ca30c; border-radius: 2px; margin-right: 6px;"></span>PASS: 0</div>
+      </div>
+    </div>
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 20px; margin: 15px 0;">
+      <div style="flex-shrink: 0;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: 100px; height: 100px;">
+<path d="M 50.0 50.0 L 50.0 0.0 A 50.0 50.0 0 0 1 98.74639560909118 38.873953302184276 Z" fill="#d03b3b" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" />
+<path d="M 50.0 50.0 L 98.74639560909118 38.873953302184276 A 50.0 50.0 0 0 1 10.908425876598507 81.17449009293668 Z" fill="#fab219" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" />
+<path d="M 50.0 50.0 L 10.908425876598507 81.17449009293668 A 50.0 50.0 0 0 1 49.99999999999999 0.0 Z" fill="#0ca30c" stroke="var(--surface-color, #fcfcfb)" stroke-width="2" />
+</svg>
+      </div>
+      <div style="font-size: 13px;">
+        <div style="margin-bottom: 8px;"><strong style="color: var(--ink-primary);">CI/CD Resource Lifecycle Hygiene</strong></div>
+        <div style="margin-bottom: 4px;"><span style="display: inline-block; width: 12px; height: 12px; background: #d03b3b; border-radius: 2px; margin-right: 6px;"></span>FAIL: 3</div>
+        <div style="margin-bottom: 4px;"><span style="display: inline-block; width: 12px; height: 12px; background: #9b7ccf; border-radius: 2px; margin-right: 6px;"></span>LACK PRIVS: 0</div>
+        <div style="margin-bottom: 4px;"><span style="display: inline-block; width: 12px; height: 12px; background: #fab219; border-radius: 2px; margin-right: 6px;"></span>MANUAL: 6</div>
+        <div><span style="display: inline-block; width: 12px; height: 12px; background: #0ca30c; border-radius: 2px; margin-right: 6px;"></span>PASS: 5</div>
+      </div>
+    </div>
+        </div>
+      </div>
+      <div>
+        <div class="badge" style="background: #d03b3b; color: white;">Status: CRITICAL</div>
+      </div>
+    </section>
+    <section>
+      <h2>Unified Control Checklist</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Control ID</th>
+            <th>Benchmark</th>
+            <th>Title</th>
+            <th style="text-align: center;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>HTH-1.1</code></td>
+            <td>howtoharden</td>
+            <td>Enable Authentication</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-1.2</code></td>
+            <td>howtoharden</td>
+            <td>Use Enterprise Authentication (LDAP/SAML/Kerberos)</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-1.3a</code></td>
+            <td>howtoharden</td>
+            <td>Disable Self-Registration</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-1.3b</code></td>
+            <td>howtoharden</td>
+            <td>Configure Session Timeout</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-2.1</code></td>
+            <td>howtoharden</td>
+            <td>Restrict Anonymous Read Access</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-2.2</code></td>
+            <td>howtoharden</td>
+            <td>Use Fine-Grained Authorization Strategy</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-2.3</code></td>
+            <td>howtoharden</td>
+            <td>Implement Role-Based Access Control</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-2.4a</code></td>
+            <td>howtoharden</td>
+            <td>Audit Token Has Minimal Privileges</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-2.4b</code></td>
+            <td>howtoharden</td>
+            <td>Restrict Administrative Access</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-3.1</code></td>
+            <td>howtoharden</td>
+            <td>Enable Agent-to-Controller Access Control</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-3.2</code></td>
+            <td>howtoharden</td>
+            <td>Disable Builds on Controller</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-3.3</code></td>
+            <td>howtoharden</td>
+            <td>Use Ephemeral Cloud-Based Agents</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-3.4a</code></td>
+            <td>howtoharden</td>
+            <td>Use HTTPS for Jenkins Transport</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-3.4b</code></td>
+            <td>howtoharden</td>
+            <td>Disable Legacy Agent Protocols</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-3.5</code></td>
+            <td>howtoharden</td>
+            <td>Prefer WebSocket for Inbound Agents</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-4.1</code></td>
+            <td>howtoharden</td>
+            <td>Enable CSRF Protection</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-4.2a</code></td>
+            <td>howtoharden</td>
+            <td>Install Credentials Binding Plugin</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-4.2b</code></td>
+            <td>howtoharden</td>
+            <td>Use Appropriate Credential Types &amp; Scoping</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-4.3a</code></td>
+            <td>howtoharden</td>
+            <td>Install Script Security Plugin</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-4.3b</code></td>
+            <td>howtoharden</td>
+            <td>Review &amp; Minimize Script Approvals</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-4.4</code></td>
+            <td>howtoharden</td>
+            <td>Enforce Hardened Jenkinsfile Patterns</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-5.1</code></td>
+            <td>howtoharden</td>
+            <td>Enable Comprehensive Audit Logging</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-5.2a</code></td>
+            <td>howtoharden</td>
+            <td>Keep Plugins Current</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>HTH-5.2b</code></td>
+            <td>howtoharden</td>
+            <td>Maintain Supported Jenkins Version</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-1</code></td>
+            <td>official-security</td>
+            <td>Security Enabled</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-2</code></td>
+            <td>official-security</td>
+            <td>Anonymous Access Denied</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-2b</code></td>
+            <td>official-security</td>
+            <td>Authorization Strategy Is Restrictive (Not &quot;Legacy Mode&quot;)</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-3a</code></td>
+            <td>official-security</td>
+            <td>Self-Registration Disabled</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-3b</code></td>
+            <td>official-security</td>
+            <td>Matrix or Role-Based Plugin When Realm Allows Untrusted Accounts</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-4</code></td>
+            <td>official-security</td>
+            <td>Overall/Read Permission Not Granted Broadly</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-5a</code></td>
+            <td>official-security</td>
+            <td>Audit Token Not Over-Privileged</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-5b</code></td>
+            <td>official-security</td>
+            <td>Admin Access Limited</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-6</code></td>
+            <td>official-security</td>
+            <td>Built-in Node Isolated from Limited-Permission Users</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-7a</code></td>
+            <td>official-security</td>
+            <td>HTTPS Encryption In Use</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-7b</code></td>
+            <td>official-security</td>
+            <td>Reverse Proxy Hardening</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-8</code></td>
+            <td>official-security</td>
+            <td>CSRF Protection Enabled</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-9</code></td>
+            <td>official-security</td>
+            <td>API Clients Use API Token Authentication</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-10a</code></td>
+            <td>official-security</td>
+            <td>Inbound TCP Agent Port Disabled</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>SEC-10b</code></td>
+            <td>official-security</td>
+            <td>Agent Protocol &amp; Firewall Correctly Restricted</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>CICD-SEC-1</code></td>
+            <td>owasp-cicd</td>
+            <td>Insufficient Flow Control Mechanisms</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>CICD-SEC-2</code></td>
+            <td>owasp-cicd</td>
+            <td>Inadequate Identity and Access Management</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>CICD-SEC-3</code></td>
+            <td>owasp-cicd</td>
+            <td>Dependency Chain Abuse</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>CICD-SEC-4</code></td>
+            <td>owasp-cicd</td>
+            <td>Poisoned Pipeline Execution</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>CICD-SEC-5</code></td>
+            <td>owasp-cicd</td>
+            <td>Insufficient PBAC (Pipeline-Based Access Control)</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>CICD-SEC-6</code></td>
+            <td>owasp-cicd</td>
+            <td>Insufficient Credential Hygiene</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>CICD-SEC-7</code></td>
+            <td>owasp-cicd</td>
+            <td>Insecure System Configuration</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>CICD-SEC-8</code></td>
+            <td>owasp-cicd</td>
+            <td>Ungoverned Usage of 3rd Party Services</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>CICD-SEC-9</code></td>
+            <td>owasp-cicd</td>
+            <td>Improper Artifact Integrity Validation</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>CICD-SEC-10</code></td>
+            <td>owasp-cicd</td>
+            <td>Insufficient Logging and Visibility</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>ORPH-1</code></td>
+            <td>orphan-hygiene</td>
+            <td>No Never-Built Jobs</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>ORPH-2</code></td>
+            <td>orphan-hygiene</td>
+            <td>No Long-Stale Active Jobs</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>ORPH-3</code></td>
+            <td>orphan-hygiene</td>
+            <td>No Lingering Disabled Jobs</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>ORPH-4</code></td>
+            <td>orphan-hygiene</td>
+            <td>Build Retention Policy Configured</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>ORPH-5</code></td>
+            <td>orphan-hygiene</td>
+            <td>Dormant User Accounts Reviewed</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>ORPH-6</code></td>
+            <td>orphan-hygiene</td>
+            <td>Jobs Reference Live SCM Sources</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>ORPH-7</code></td>
+            <td>orphan-hygiene</td>
+            <td>No Long-Offline Build Agents</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td><code>ORPH-8</code></td>
+            <td>orphan-hygiene</td>
+            <td>No Installed-But-Inactive Plugins</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>ORPH-9</code></td>
+            <td>orphan-hygiene</td>
+            <td>No Empty Views</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>ORPH-10</code></td>
+            <td>orphan-hygiene</td>
+            <td>No Stuck/Blocked Queue Items</td>
+            <td style="text-align: center;"><span class="status-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><code>ORPH-11</code></td>
+            <td>orphan-hygiene</td>
+            <td>Multibranch Pipeline Branches Reference Live SCM Branches</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>ORPH-12</code></td>
+            <td>orphan-hygiene</td>
+            <td>Dormant Admin-Privileged Accounts Reviewed</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>ORPH-13</code></td>
+            <td>orphan-hygiene</td>
+            <td>Unused/Orphaned Credentials</td>
+            <td style="text-align: center;"><span class="status-manual">MANUAL</span></td>
+          </tr>
+          <tr>
+            <td><code>ORPH-14</code></td>
+            <td>orphan-hygiene</td>
+            <td>Jenkins Core &amp; Plugin Versions Not End-of-Life</td>
+            <td style="text-align: center;"><span class="status-fail">FAIL</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Detailed Findings by Benchmark</h2>
+      <h3>howtoharden.com Hardening Guide</h3>
+      <details>
+        <summary>
+          <span>FAIL (10)</span>
+          <span style="font-size: 12px; color: var(--ink-secondary);">Click to expand</span>
+        </summary>
+        <div class="details-content">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Evidence</th>
+                <th>Remediation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>HTH-1.2</code></td>
+                <td>Use Enterprise Authentication (LDAP/SAML/Kerberos)</td>
+                <td>Security realm is hudson.security.HudsonPrivateSecurityRealm (Jenkins internal user database); no LDAP/SAML/OAuth plugins installed</td>
+                <td>Configure LDAP/SAML/OIDC realm in Manage Jenkins &gt; Security so identity and offboarding are centrally managed</td>
+              </tr>
+              <tr>
+                <td><code>HTH-2.2</code></td>
+                <td>Use Fine-Grained Authorization Strategy</td>
+                <td>Authorization strategy is hudson.security.FullControlOnceLoggedInAuthorizationStrategy (&#x27;Logged-in users can do anything&#x27;)</td>
+                <td>Switch to Matrix-based, Project-based Matrix, or Role-based authorization and grant least-privilege permissions per user/group</td>
+              </tr>
+              <tr>
+                <td><code>HTH-2.3</code></td>
+                <td>Implement Role-Based Access Control</td>
+                <td>Plugin inventory (55 plugins) contains no &#x27;role-strategy&#x27; and no &#x27;matrix-auth&#x27; plugin</td>
+                <td>Install Role-based Authorization Strategy plugin, define roles (dev/deploy/admin) and assign users/groups to them</td>
+              </tr>
+              <tr>
+                <td><code>HTH-2.4a</code></td>
+                <td>Audit Token Has Minimal Privileges</td>
+                <td>whoami authorities=[&#x27;authenticated&#x27;], but token executed Groovy on /scriptText (HTTP 200) =&gt; effective Overall/Administer via FullControlOnceLoggedIn</td>
+                <td>Create a dedicated read-only audit account with Overall/Read + job Read only; stop granting all logged-in users admin</td>
+              </tr>
+              <tr>
+                <td><code>HTH-2.4b</code></td>
+                <td>Restrict Administrative Access</td>
+                <td>Strategy grants full control to every authenticated user; 4 real accounts exist (admin, alice, knave, pwned) =&gt; all are de-facto admins</td>
+                <td>Adopt matrix/role-based authorization and grant Overall/Administer to a minimal, named set of administrators only</td>
+              </tr>
+              <tr>
+                <td><code>HTH-3.2</code></td>
+                <td>Disable Builds on Controller</td>
+                <td>Built-In Node (hudson.model.Hudson$MasterComputer) reports numExecutors=2; controller mode EXCLUSIVE but executors still available</td>
+                <td>Manage Jenkins &gt; Nodes &gt; Built-In Node &gt; Configure: set number of executors to 0 and run all builds on agents</td>
+              </tr>
+              <tr>
+                <td><code>HTH-3.4a</code></td>
+                <td>Use HTTPS for Jenkins Transport</td>
+                <td>Target URL is http://localhost:8080/ (plaintext HTTP); Jenkins rootUrl also reported as http://localhost:8080/</td>
+                <td>Terminate TLS at a reverse proxy or configure Jenkins with a valid certificate; redirect HTTP to HTTPS and enable HSTS</td>
+              </tr>
+              <tr>
+                <td><code>HTH-4.2a</code></td>
+                <td>Install Credentials Binding Plugin</td>
+                <td>No &#x27;credentials-binding&#x27; plugin; the base &#x27;credentials&#x27; plugin is absent too (CredentialsProvider class unresolvable, /credentials/api/json 404)</td>
+                <td>Install Credentials and Credentials Binding plugins and inject secrets via withCredentials instead of plaintext job config</td>
+              </tr>
+              <tr>
+                <td><code>HTH-5.1</code></td>
+                <td>Enable Comprehensive Audit Logging</td>
+                <td>Plugin inventory contains no &#x27;audit-trail&#x27; plugin (55 plugins listed)</td>
+                <td>Install Audit Trail plugin, configure a log destination (file/syslog) and ship logs to a SIEM with retention</td>
+              </tr>
+              <tr>
+                <td><code>HTH-5.2a</code></td>
+                <td>Keep Plugins Current</td>
+                <td>21 of 55 plugins report hasUpdate=true (e.g. authorize-project, cloudbees-folder, durable-task, job-dsl, pam-auth, script-security deps)</td>
+                <td>Apply plugin updates in a staged environment, then production; establish a monthly patch cadence tracking Jenkins security advisories</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details>
+        <summary>
+          <span>MANUAL (5)</span>
+          <span style="font-size: 12px; color: var(--ink-secondary);">Click to expand</span>
+        </summary>
+        <div class="details-content">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Evidence</th>
+                <th>Remediation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>HTH-3.3</code></td>
+                <td>Use Ephemeral Cloud-Based Agents</td>
+                <td>No clouds configured (Jenkins.clouds=[]); single static permanent agent &#x27;agent1&#x27; (hudson.slaves.DumbSlave), currently offline</td>
+                <td>Review architecture: migrate to ephemeral cloud agents (Kubernetes/EC2/Docker) with idle timeout and per-build disposal</td>
+              </tr>
+              <tr>
+                <td><code>HTH-3.5</code></td>
+                <td>Prefer WebSocket for Inbound Agents</td>
+                <td>agent1 is an inbound JNLP agent (jnlpAgent=true) using TCP port 50000; agent-side WebSocket flag not exposed via REST</td>
+                <td>Reconnect agent1 with -webSocket (Jenkins 2.217+) and disable the TCP inbound port if no other agents require it</td>
+              </tr>
+              <tr>
+                <td><code>HTH-4.2b</code></td>
+                <td>Use Appropriate Credential Types &amp; Scoping</td>
+                <td>Credentials subsystem not installed, so no credential store can be enumerated; secrets may instead be embedded in job config/env</td>
+                <td>Install Credentials plugin, then review job configs for hardcoded secrets and migrate to scoped SSH keys/tokens/secret files</td>
+              </tr>
+              <tr>
+                <td><code>HTH-4.4</code></td>
+                <td>Enforce Hardened Jenkinsfile Patterns</td>
+                <td>Only job is freestyle &#x27;wonderland-twiddle/wonderland-twiddledum&#x27;; no pipeline/workflow-job plugins, so no Jenkinsfiles to inspect via API</td>
+                <td>When adopting pipelines, review Jenkinsfiles for input validation, pinned library/tool versions, scoped credentials, PR approval gates</td>
+              </tr>
+              <tr>
+                <td><code>HTH-5.2b</code></td>
+                <td>Maintain Supported Jenkins Version</td>
+                <td>X-Jenkins header reports version 2.492.3 (LTS line); currency vs latest LTS/advisories cannot be validated offline</td>
+                <td>Cross-check 2.492.3 against jenkins.io/security/advisories and the current LTS; upgrade if outside one LTS cycle</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details>
+        <summary>
+          <span>PASS (9)</span>
+          <span style="font-size: 12px; color: var(--ink-secondary);">Click to expand</span>
+        </summary>
+        <div class="details-content">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Evidence</th>
+                <th>Remediation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>HTH-1.1</code></td>
+                <td>Enable Authentication</td>
+                <td>info: useSecurity=true; anon-check returned forbidden; unauthenticated GET /api/json and / both HTTP 403</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>HTH-1.3a</code></td>
+                <td>Disable Self-Registration</td>
+                <td>signup-check: HTTP 404, likely_available=false; securityRealm.allowsSignup()=false</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>HTH-1.3b</code></td>
+                <td>Configure Session Timeout</td>
+                <td>Servlet session timeout configured at 30 minutes (within recommended 1-8h/idle range)</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>HTH-2.1</code></td>
+                <td>Restrict Anonymous Read Access</td>
+                <td>Unauthenticated GET /api/json = 403 and GET / = 403; no job, view or system data exposed anonymously</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>HTH-3.1</code></td>
+                <td>Enable Agent-to-Controller Access Control</td>
+                <td>AdminWhitelistRule master kill switch = false, i.e. agent-to-controller access control is enabled (Jenkins 2.492.3)</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>HTH-3.4b</code></td>
+                <td>Disable Legacy Agent Protocols</td>
+                <td>slaveAgentPort=50000 (inbound enabled) but enabled agent protocols are only [JNLP4-connect, Ping]; no JNLP1/2/3</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>HTH-4.1</code></td>
+                <td>Enable CSRF Protection</td>
+                <td>info: useCrumbs=true; /crumbIssuer/api/json returned hudson.security.csrf.DefaultCrumbIssuer with a valid Jenkins-Crumb token</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>HTH-4.3a</code></td>
+                <td>Install Script Security Plugin</td>
+                <td>Plugin script-security 1412.v7737b_3405f86 installed, enabled=true, active=true</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>HTH-4.3b</code></td>
+                <td>Review &amp; Minimize Script Approvals</td>
+                <td>ScriptApproval: 0 approved scripts, 0 pending scripts, 0 approved signatures, 0 pending signatures</td>
+                <td>N/A</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <h3>Jenkins.io Official Security</h3>
+      <details>
+        <summary>
+          <span>FAIL (3)</span>
+          <span style="font-size: 12px; color: var(--ink-secondary);">Click to expand</span>
+        </summary>
+        <div class="details-content">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Evidence</th>
+                <th>Remediation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>SEC-6</code></td>
+                <td>Built-in Node Isolated from Limited-Permission Users</td>
+                <td>Built-in node (hudson.model.Hudson, mode EXCLUSIVE) has numExecutors=2; builds can run on the controller.</td>
+                <td>Set built-in node executors to 0 (Manage Jenkins -&gt; Nodes -&gt; Built-In Node) and move all builds to agents.</td>
+              </tr>
+              <tr>
+                <td><code>SEC-7a</code></td>
+                <td>HTTPS Encryption In Use</td>
+                <td>Target URL is http://localhost:8080/ — plaintext HTTP; credentials and API tokens traverse unencrypted.</td>
+                <td>Terminate TLS at a reverse proxy or enable HTTPS in Jenkins; redirect all HTTP traffic to HTTPS.</td>
+              </tr>
+              <tr>
+                <td><code>SEC-10a</code></td>
+                <td>Inbound TCP Agent Port Disabled</td>
+                <td>info: slaveAgentPort=50000 (fixed port enabled); node agent1 is a JNLP/inbound agent (jnlpAgent=true).</td>
+                <td>Set Manage Jenkins -&gt; Security -&gt; TCP port for inbound agents to Disabled, or restrict if inbound agents are required.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details>
+        <summary>
+          <span>MANUAL (5)</span>
+          <span style="font-size: 12px; color: var(--ink-secondary);">Click to expand</span>
+        </summary>
+        <div class="details-content">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Evidence</th>
+                <th>Remediation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>SEC-2b</code></td>
+                <td>Authorization Strategy Is Restrictive (Not &quot;Legacy Mode&quot;)</td>
+                <td>REST API does not expose the authorization strategy class name.</td>
+                <td>Verify Manage Jenkins -&gt; Security -&gt; Authorization is not &quot;Legacy mode&quot; or &quot;Logged-in users can do anything&quot;.</td>
+              </tr>
+              <tr>
+                <td><code>SEC-5b</code></td>
+                <td>Admin Access Limited</td>
+                <td>REST API cannot enumerate all users and their effective permissions.</td>
+                <td>Audit who holds Overall/Administer and confirm only trusted admins are listed.</td>
+              </tr>
+              <tr>
+                <td><code>SEC-7b</code></td>
+                <td>Reverse Proxy Hardening</td>
+                <td>Reverse proxy presence/configuration is not detectable via REST API.</td>
+                <td>Verify Jenkins sits behind Nginx/Apache/LB with security headers (X-Frame-Options, X-Content-Type-Options, HSTS).</td>
+              </tr>
+              <tr>
+                <td><code>SEC-9</code></td>
+                <td>API Clients Use API Token Authentication</td>
+                <td>Scripted/programmatic integrations cannot be enumerated via REST API.</td>
+                <td>Document and enforce that all scripted clients authenticate with API tokens, not username+password.</td>
+              </tr>
+              <tr>
+                <td><code>SEC-10b</code></td>
+                <td>Agent Protocol &amp; Firewall Correctly Restricted</td>
+                <td>Inbound TCP port 50000 is enabled with an inbound agent (agent1); enabled protocols not exposed via REST API.</td>
+                <td>Confirm only JNLP4-connect (Protocol/4, TLS) is enabled and firewall restricts port 50000 to known agent hosts.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details>
+        <summary>
+          <span>PASS (7)</span>
+          <span style="font-size: 12px; color: var(--ink-secondary);">Click to expand</span>
+        </summary>
+        <div class="details-content">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Evidence</th>
+                <th>Remediation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>SEC-1</code></td>
+                <td>Security Enabled</td>
+                <td>info: useSecurity=true; a security realm and authorization strategy are active.</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>SEC-2</code></td>
+                <td>Anonymous Access Denied</td>
+                <td>anon-check: unauthenticated /api/json returned forbidden (401/403), no Jenkins data disclosed.</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>SEC-3a</code></td>
+                <td>Self-Registration Disabled</td>
+                <td>signup-check: /signup returned HTTP 404, likely_available=false; self-registration is disabled.</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>SEC-3b</code></td>
+                <td>Matrix or Role-Based Plugin When Realm Allows Untrusted Accounts</td>
+                <td>Self-registration disabled (404). Note: no matrix-auth or role-strategy plugin found in 54 installed plugins.</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>SEC-4</code></td>
+                <td>Overall/Read Permission Not Granted Broadly</td>
+                <td>anon-check: anonymous read denied (forbidden); Overall/Read is not granted to anonymous users.</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>SEC-5a</code></td>
+                <td>Audit Token Not Over-Privileged</td>
+                <td>whoami: name=pwned, authenticated=true, authorities=[&quot;authenticated&quot;] — no admin authority present.</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>SEC-8</code></td>
+                <td>CSRF Protection Enabled</td>
+                <td>crumb: DefaultCrumbIssuer returned a valid crumb (field Jenkins-Crumb); info shows useCrumbs=true.</td>
+                <td>N/A</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <h3>OWASP Top 10 CI/CD Security Risks</h3>
+      <details>
+        <summary>
+          <span>FAIL (7)</span>
+          <span style="font-size: 12px; color: var(--ink-secondary);">Click to expand</span>
+        </summary>
+        <div class="details-content">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Evidence</th>
+                <th>Remediation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>CICD-SEC-2</code></td>
+                <td>Inadequate Identity and Access Management</td>
+                <td>useSecurity=true and anonymous /api/json denied (403), but no Audit Trail plugin among 55 installed; /asynchPeople 404 so user count unverified.</td>
+                <td>Install and configure the Audit Trail plugin, forward logs to a SIEM, and perform a manual review of user accounts and permission grants.</td>
+              </tr>
+              <tr>
+                <td><code>CICD-SEC-3</code></td>
+                <td>Dependency Chain Abuse</td>
+                <td>21 of 55 plugins have hasUpdate=true (e.g. cloudbees-folder 6.16, job-dsl 1.78.3, okhttp-api 4.9.2, sshd, pam-auth). Core 2.492.3.</td>
+                <td>Update all 21 outdated plugins, upgrade core to the current LTS, and establish a recurring patch/vulnerability-scan cycle for plugins.</td>
+              </tr>
+              <tr>
+                <td><code>CICD-SEC-4</code></td>
+                <td>Poisoned Pipeline Execution</td>
+                <td>Script Security 1412.v7737b_3405f86 present, but Credentials Binding plugin is NOT installed (no credentials-binding or credentials plugin found).</td>
+                <td>Install the Credentials Binding plugin, restrict who can approve scripts, and review Jenkinsfiles/pending script approvals for injection paths.</td>
+              </tr>
+              <tr>
+                <td><code>CICD-SEC-5</code></td>
+                <td>Insufficient PBAC (Pipeline-Based Access Control)</td>
+                <td>No matrix-auth, role-strategy or job-based authorization plugin installed; credentials store endpoint returns HTTP 404 so no credential scoping detected.</td>
+                <td>Install Matrix or Role-based Authorization Strategy, define least-privilege per-job/folder permissions, and scope credentials to folders.</td>
+              </tr>
+              <tr>
+                <td><code>CICD-SEC-6</code></td>
+                <td>Insufficient Credential Hygiene</td>
+                <td>Credentials Binding plugin missing and Audit Trail plugin missing; credentials store API returns HTTP 404, so no domains/scoping could be enumerated.</td>
+                <td>Install Credentials Binding and Audit Trail plugins, store all secrets in the credentials store with folder scope, and enforce rotation.</td>
+              </tr>
+              <tr>
+                <td><code>CICD-SEC-7</code></td>
+                <td>Insecure System Configuration</td>
+                <td>CSRF enabled (useCrumbs=true, crumb issued) and anonymous denied, but target is plain HTTP (no TLS) and inbound agent port 50000 is enabled.</td>
+                <td>Terminate TLS in front of Jenkins and force HTTPS; disable the inbound agent port (set to Disabled) or restrict it to a fixed, firewalled port.</td>
+              </tr>
+              <tr>
+                <td><code>CICD-SEC-10</code></td>
+                <td>Insufficient Logging and Visibility</td>
+                <td>Audit Trail plugin not present in /pluginManager plugin list (55 plugins enumerated); no audit-logging plugin of any kind installed.</td>
+                <td>Install and enable the Audit Trail plugin, configure log targets with retention, and forward CI/CD events to a SIEM with alerting.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details>
+        <summary>
+          <span>MANUAL (3)</span>
+          <span style="font-size: 12px; color: var(--ink-secondary);">Click to expand</span>
+        </summary>
+        <div class="details-content">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Evidence</th>
+                <th>Remediation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>CICD-SEC-1</code></td>
+                <td>Insufficient Flow Control Mechanisms</td>
+                <td>REST exposes only 2 folders (wonderland-dodo, wonderland-twiddle); approval gates, trigger restrictions and SCM branch protection are not queryable.</td>
+                <td>Audit pipeline job definitions for approval gates, trigger restrictions and stage controls; verify SCM branch protection rules are enforced.</td>
+              </tr>
+              <tr>
+                <td><code>CICD-SEC-8</code></td>
+                <td>Ungoverned Usage of 3rd Party Services</td>
+                <td>No GitHub/GitLab/AWS/Azure/Docker/Artifactory/Slack plugins found; integration-capable plugins present: mcp-server, job-dsl, sse-gateway, pubsub-light, sshd.</td>
+                <td>Audit third-party integrations (notably MCP Server and Job DSL) for authorization, scoped/rotated credentials and audit logging.</td>
+              </tr>
+              <tr>
+                <td><code>CICD-SEC-9</code></td>
+                <td>Improper Artifact Integrity Validation</td>
+                <td>Artifact checksum/signature/provenance handling is not exposed via REST; no artifact-signing plugin present among the 55 installed.</td>
+                <td>Review pipelines to ensure checksums are computed and validated, signatures verified, and artifact provenance (SLSA attestation) recorded.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <h3>CI/CD Resource Lifecycle Hygiene</h3>
+      <details>
+        <summary>
+          <span>FAIL (3)</span>
+          <span style="font-size: 12px; color: var(--ink-secondary);">Click to expand</span>
+        </summary>
+        <div class="details-content">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Evidence</th>
+                <th>Remediation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>ORPH-1</code></td>
+                <td>No Never-Built Jobs</td>
+                <td>The instance contains exactly one buildable job and it has never been built: &#x27;wonderland-twiddle/wonderland-twiddledum&#x27; (hudson.model.FreeStyleProject, url http://localhost:8080/job/wonderland-twiddle/job/wonderland-twiddledum/) reports lastBuild=null, firstBuild=null, builds=[], color=&#x27;notbuilt&#x27;. That is 1 of 1 jobs (100%) never built. Contributing root cause identified in ORPH-7: this job is tied to the label &#x27;agent1&#x27;, whose only node is offline, so the job cannot execute even if triggered. Two folder containers also exist (&#x27;wonderland-dodo&#x27;, &#x27;wonderland-twiddle&#x27;); folders are not buildable items and are excluded from this count, but &#x27;wonderland-dodo&#x27; is completely empty (jobs=[]) and is itself an orphaned container.</td>
+                <td>Determine whether &#x27;wonderland-twiddle/wonderland-twiddledum&#x27; is intended automation. If it is, fix the reason it cannot run: bring the &#x27;agent1&#x27; node online (see ORPH-7) or retarget the job to an available label such as &#x27;built-in&#x27;, then trigger a build to confirm the configuration works. If the job is abandoned, delete it via Job -&gt; Configure -&gt; Delete Project (or DELETE http://localhost:8080/job/wonderland-twiddle/job/wonderland-twiddledum/doDelete). Also delete the empty folder &#x27;wonderland-dodo&#x27; if it is no longer needed.</td>
+              </tr>
+              <tr>
+                <td><code>ORPH-7</code></td>
+                <td>No Long-Offline Build Agents</td>
+                <td>1 of 2 registered nodes is offline. Node &#x27;agent1&#x27; (hudson.slaves.SlaveComputer / DumbSlave, displayName &#x27;agent1&#x27;) reports offline=true, temporarilyOffline=false, offlineCause=null, and offlineCauseReason=&quot;&quot; (empty string -- Jenkins recorded no reason, indicating the agent simply never connected or dropped its connection rather than being deliberately taken offline by an operator). It is a JNLP/inbound agent (jnlpAgent=true) with launchSupported=false, so the controller cannot start it; it must connect inbound. It declares numExecutors=2, but all monitorData entries (disk, swap, response time, clock, architecture) are null, confirming the controller has no telemetry from it. Both of its labels, &#x27;agent1&#x27; and &#x27;myagent&#x27;, report offline=true with totalExecutors=0. Operational impact: the only job on this instance, &#x27;wonderland-twiddledum&#x27;, is tied to label &#x27;agent1&#x27; (tiedJobs on that label), so this offline agent is the direct cause of that job&#x27;s zero build history (ORPH-1). The controller&#x27;s own &#x27;Built-In Node&#x27; is online and healthy (offline=false, 2 idle executors, 2 executors total).</td>
+                <td>Investigate &#x27;agent1&#x27; at http://localhost:8080/computer/agent1/. Because it is an inbound (JNLP) agent, the controller cannot launch it -- determine whether the agent host still exists and whether its agent process is running and can reach the controller on the JNLP port (slaveAgentPort 50000 is open on this controller). If the host is permanently gone, decommission the node: Manage Jenkins -&gt; Nodes -&gt; agent1 -&gt; Delete Agent, and revoke its agent secret so the stale credential cannot be reused to register a rogue executor against this controller. If the agent is still needed, restart the inbound agent process and confirm it reconnects, then rebuild &#x27;wonderland-twiddledum&#x27; to verify. Either way, resolve the label mismatch: the job is tied to &#x27;agent1&#x27; while the node also advertises &#x27;myagent&#x27;, and neither label currently has any online executor.</td>
+              </tr>
+              <tr>
+                <td><code>ORPH-14</code></td>
+                <td>Jenkins Core &amp; Plugin Versions Not End-of-Life</td>
+                <td>Jenkins core is 2.492.3 (from the X-Jenkins response header). The 2.492.x LTS line dates from early 2025 and, as of this audit on 2026-08-17, it is roughly 16 months old and is no longer the current LTS line receiving security backports -- Jenkins LTS lines are superseded on a ~12-week cadence and only the current line receives fixes. Plugin staleness is also evident: 21 of 55 installed plugins report hasUpdate=true, meaning the controller itself knows newer releases exist -- authorize-project 1.4.0, build-timeout 1.20, cloudbees-folder 6.16, command-launcher, durable-task, envinject-api 1.8, handy-uri-templates-2-api 2.1.8-1.0, javax-mail-api 1.6.2-10, jdk-tool, jenkins-design-language 1.25.1, jjwt-api 0.11.2-9.c8b45b8bb173, job-dsl 1.78.3, okhttp-api 4.9.2-20211102, pam-auth 1.6.1, pipeline-model-api 1.9.2, popper-api 1.16.1-2, popper2-api 2.10.2-1, pubsub-light 1.16, resource-disposer 0.16, sse-gateway 1.24, sshd 3.330.vc866a_8389b_58. Several are demonstrably multi-year-old builds: okhttp-api&#x27;s version string 4.9.2-20211102 encodes a 2021-11-02 build date (over 4 years old), and ace-editor 1.1, handlebars 3.0.8, and momentjs 1.1.1 still carry legacy wiki.jenkins-ci.org URLs and are widely deprecated/unmaintained bundle plugins. Several plugins also declare very old requiredCoreVersion values (1.580.1 for ace-editor and momentjs, 1.625.3 for handy-uri-templates-2-api), a further indicator of abandonment. CAVEAT: Jenkins REST API does not expose upstream plugin repository release dates -- the plugins endpoint on this instance returns no `lastUpdated` field -- so exact per-plugin release dates and formal deprecation status must be confirmed against https://plugins.jenkins.io/. The FAIL verdict rests on the directly observable facts above (superseded core LTS line, 21 plugins with updates pending, and version strings encoding 2021-era builds), not on assumed dates.</td>
+                <td>1) Upgrade Jenkins core from 2.492.3 to the current supported LTS release, following the LTS upgrade guide and reviewing intervening security advisories at https://www.jenkins.io/security/advisories/ for CVEs affecting 2.492.3. Take a full $JENKINS_HOME backup first. 2) Update all 21 plugins reporting hasUpdate=true via Manage Jenkins -&gt; Plugins -&gt; Updates, then restart the controller and re-run ORPH-8 to confirm every plugin returns active=true after the restart. 3) Check each of ace-editor, handlebars, momentjs, popper-api, popper2-api, handy-uri-templates-2-api, okhttp-api, and javax-mail-api on https://plugins.jenkins.io/ for deprecation notices; deprecated bundle plugins that no longer have a dependent should be uninstalled outright rather than updated. 4) Establish a recurring patch cadence (e.g. monthly plugin updates, LTS core upgrades each quarter) and subscribe to the Jenkins security advisory mailing list so EOL drift is caught before it accumulates.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details>
+        <summary>
+          <span>MANUAL (6)</span>
+          <span style="font-size: 12px; color: var(--ink-secondary);">Click to expand</span>
+        </summary>
+        <div class="details-content">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Evidence</th>
+                <th>Remediation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>ORPH-4</code></td>
+                <td>Build Retention Policy Configured</td>
+                <td>MANUAL — audit each job&#x27;s configuration page for a configured &quot;Discard Old Builds&quot; policy (pipeline: `discarder`, freestyle: &quot;Build Discarder&quot; in job config). Jobs without a retention policy are a hygiene risk. The REST API does not expose per-job retention policies in bulk. Scope note for this instance: only one job exists (&#x27;wonderland-twiddle/wonderland-twiddledum&#x27;), so the manual review is a single-job task.</td>
+                <td>Open http://localhost:8080/job/wonderland-twiddle/job/wonderland-twiddledum/configure and confirm that &quot;Discard old builds&quot; is enabled with explicit values for &#x27;Days to keep builds&#x27; and/or &#x27;Max # of builds to keep&#x27;. For freestyle jobs this is the &quot;Build Discarder&quot; checkbox in the General section; for pipelines use options { buildDiscarder(logRotator(numToKeepStr: &#x27;10&#x27;)) }. Alternatively inspect the raw config at http://localhost:8080/job/wonderland-twiddle/job/wonderland-twiddledum/config.xml and look for a &lt;jenkins.model.BuildDiscarderProperty&gt; or &lt;logRotator&gt; element. Consider enforcing a default retention policy globally (e.g., via the Job DSL plugin, which is installed at version 1.78.3, or a shared pipeline library) so new jobs inherit it.</td>
+              </tr>
+              <tr>
+                <td><code>ORPH-5</code></td>
+                <td>Dormant User Accounts Reviewed</td>
+                <td>MANUAL — treat the full user roster returned by jenkins_api.py people as a starting point, not a verdict. The `lastChange` field is incomplete (many active accounts show null). Cross-reference this list against your actual Jenkins usage logs (if available via the Audit Trail plugin or external logging) to identify truly dormant accounts, then review them against Manage Jenkins -&gt; Users for disablement. ADDITIONAL LIMITATION OBSERVED IN THIS INSTANCE: the user roster could not be retrieved at all. `jenkins_api.py people` returned {&quot;status&quot;:&quot;error&quot;,&quot;message&quot;:&quot;HTTP 404&quot;}, and direct probes of http://localhost:8080/asynchPeople/api/json, http://localhost:8080/asynchPeople/ and http://localhost:8080/people/api/json all returned HTTP 404 (Jenkins &#x27;Not Found&#x27; page, not a 403 permission error) on Jenkins core 2.492.3. The per-user endpoint does work (http://localhost:8080/securityRealm/user/pwned/api/json returns HTTP 200), so individual accounts are readable but the roster listing endpoint is unavailable on this version. The authenticated audit account is &#x27;pwned&#x27; with authorities [&#x27;authenticated&#x27;] only (not a member of any admin group per /whoAmI), so a permission restriction cannot be fully ruled out as a contributing factor.</td>
+                <td>Enumerate users directly from the security realm rather than the REST roster endpoint: browse http://localhost:8080/manage/securityRealm/ (Manage Jenkins -&gt; Security -&gt; Users) as an administrator, or inspect $JENKINS_HOME/users/*/config.xml on the controller. For each account, cross-reference against actual authentication activity -- install the Audit Trail plugin (not currently installed among the 55 plugins on this instance) or forward Jenkins access logs to external logging, since Jenkins core does not record last-login timestamps and `lastChange` reflects only SCM changeset authorship. Disable or delete accounts with no verified activity in 90+ days. Separately, review the audit account named &#x27;pwned&#x27; -- that name is a strong indicator of a previously compromised or attacker-created account and should be validated against your provisioning records as a priority.</td>
+              </tr>
+              <tr>
+                <td><code>ORPH-6</code></td>
+                <td>Jobs Reference Live SCM Sources</td>
+                <td>MANUAL — audit job configurations for SCM sources (Git, Svn, Perforce, etc.). Verify that each repository URL is still reachable and the repository has not been archived or deleted. The REST API does not expose or verify job SCM configurations. Context for this instance: no SCM plugins are installed (the 55-plugin inventory contains no git, git-client, subversion, or perforce plugin), which strongly suggests the single job &#x27;wonderland-twiddle/wonderland-twiddledum&#x27; has SCM set to &#x27;None&#x27; -- but this must be confirmed by inspecting the job configuration directly.</td>
+                <td>Inspect http://localhost:8080/job/wonderland-twiddle/job/wonderland-twiddledum/config.xml (or the Configure page) and check the &lt;scm&gt; element. If it is hudson.scm.NullSCM, no action is needed. If any repository URL is configured, verify it is still reachable and not archived, and confirm the credentials used to reach it are still valid. Repeat for every job as jobs are added. Disable SCM polling on any job whose repository is dead, to stop wasted polling cycles and recurring build failures.</td>
+              </tr>
+              <tr>
+                <td><code>ORPH-11</code></td>
+                <td>Multibranch Pipeline Branches Reference Live SCM Branches</td>
+                <td>MANUAL — for any multibranch or organization-folder pipelines, audit the indexed branches (visible in the Multibranch Pipeline view) against the actual SCM repository. Delete branch jobs if the SCM branch no longer exists. The REST API cannot cross-reference indexed branches against live SCM without per-job API calls outside this audit&#x27;s scope. Context for this instance: the job tree contains no multibranch or organization-folder items -- the only classes present are com.cloudbees.hudson.plugins.folder.Folder (x2) and hudson.model.FreeStyleProject (x1). The plugin inventory also contains no workflow-multibranch, branch-api, or workflow-job plugin, so multibranch indexing is not currently possible on this controller. The manual check is therefore expected to be a no-op today, but should be repeated if multibranch pipelines are introduced.</td>
+                <td>No multibranch or organization-folder pipelines currently exist, so there are no stale branch indexes to remove. If multibranch pipelines are adopted later, configure an explicit &#x27;Discard old items&#x27; / orphaned item strategy on each multibranch project (days-to-keep and max-to-keep for orphaned branch jobs) so deleted SCM branches are automatically pruned, and periodically compare the indexed branch list against the live repository.</td>
+              </tr>
+              <tr>
+                <td><code>ORPH-12</code></td>
+                <td>Dormant Admin-Privileged Accounts Reviewed</td>
+                <td>MANUAL — cross-reference the dormant user list from ORPH-5 (using the caveat that lastChange is incomplete) against Manage Jenkins -&gt; Security -&gt; Authorization. Identify which dormant accounts (if any) hold Overall/Administer permission. These are higher-severity targets for review and disablement. The REST API cannot enumerate per-user permissions without a role-strategy-specific endpoint. Blocking limitation in this instance: the ORPH-5 user roster could not be retrieved (all roster endpoints returned HTTP 404 on Jenkins core 2.492.3), so there is no list to cross-reference. What is known: the audit account &#x27;pwned&#x27; authenticates successfully and /whoAmI reports authorities=[&#x27;authenticated&#x27;] with no admin group membership, and GET http://localhost:8080/manage returns HTTP 302 (redirect) rather than a 200 admin page for this account. No role-strategy plugin (e.g. role-strategy, matrix-auth) appears in the 55-plugin inventory, which suggests a simple authorization strategy is in force.</td>
+                <td>As an administrator, open Manage Jenkins -&gt; Security -&gt; Authorization to see the configured strategy and which principals hold Overall/Administer. If the strategy is &#x27;Logged-in users can do anything&#x27;, then EVERY account -- including dormant ones and the suspiciously named &#x27;pwned&#x27; account -- effectively holds broad privilege, which makes this control high severity; replace it with Matrix-based security or the Role Strategy plugin and grant Administer to a named, minimal set of accounts. Then enumerate users from $JENKINS_HOME/users/ or Manage Jenkins -&gt; Users (per ORPH-5), intersect that list with the admin principals, and disable or de-privilege any admin account without verified recent activity. Prioritize investigating the &#x27;pwned&#x27; account, whose name suggests attacker origin.</td>
+              </tr>
+              <tr>
+                <td><code>ORPH-13</code></td>
+                <td>Unused/Orphaned Credentials</td>
+                <td>MANUAL — cross-reference the credential domains returned by jenkins_api.py credentials against actual job configurations. Identify credentials that are not referenced by any active job, and delete or archive them if they are no longer needed. The REST API metadata does not expose which credentials are referenced by which jobs. Findings for this instance: no credential store could be enumerated. `jenkins_api.py credentials` returned {&quot;status&quot;:&quot;error&quot;,&quot;message&quot;:&quot;HTTP 404&quot;}, and direct probes of http://localhost:8080/credentials/store/system/api/json and http://localhost:8080/credentials/store/system/domain/_/api/json returned HTTP 404 (Jenkins &#x27;Not Found&#x27; page, not 403). The cause appears structural rather than permission-based: the Credentials plugin is NOT installed -- no plugin whose shortName contains &#x27;credential&#x27; appears among the 55 installed plugins (no &#x27;credentials&#x27;, &#x27;credentials-binding&#x27;, &#x27;plain-credentials&#x27;, or &#x27;ssh-credentials&#x27;). With no credentials plugin, there is no credential store to hold orphaned credentials.</td>
+                <td>Confirm from Manage Jenkins -&gt; Plugins (Installed) that the Credentials plugin is genuinely absent; if so, there are no stored credentials to orphan and this control is satisfied by construction, though it also means any secrets used by builds are likely held insecurely (inline in job config, in environment variables, or on the agent filesystem) -- audit the single job&#x27;s config.xml for hardcoded secrets. If the Credentials plugin is in fact installed and the 404s were a permission artifact, re-run this check with an account holding Overall/Administer and enumerate http://localhost:8080/manage/credentials/, then cross-reference each credential ID against job configurations (a repository-wide grep of $JENKINS_HOME/jobs/*/config.xml for each credentialsId is the most reliable method) and delete any credential not referenced by an active job. Rotate before deleting, in case the secret is used outside Jenkins.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details>
+        <summary>
+          <span>PASS (5)</span>
+          <span style="font-size: 12px; color: var(--ink-secondary);">Click to expand</span>
+        </summary>
+        <div class="details-content">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Evidence</th>
+                <th>Remediation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>ORPH-2</code></td>
+                <td>No Long-Stale Active Jobs</td>
+                <td>No active job has a lastCompletedBuild timestamp older than the 180-day threshold. The only buildable job, &#x27;wonderland-twiddle/wonderland-twiddledum&#x27; (buildable=true), returns lastCompletedBuild=null, so no days-since-last-build value can be computed and no job exceeds the threshold. IMPORTANT CAVEAT: this is a PASS on a technicality, not a sign of health -- the job has zero build history at all, which is reported as a FAIL under ORPH-1. The absence of any completed build means staleness cannot be measured for this instance; treat ORPH-1 as the authoritative finding for this job.</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>ORPH-3</code></td>
+                <td>No Lingering Disabled Jobs</td>
+                <td>No disabled jobs found. The full job tree (queried three levels deep, including inside folders) contains exactly one buildable item, &#x27;wonderland-twiddle/wonderland-twiddledum&#x27;, with buildable=true. The two Folder objects (&#x27;wonderland-dodo&#x27;, &#x27;wonderland-twiddle&#x27;) are container types that do not expose a &#x27;buildable&#x27; attribute and cannot be disabled in the job sense. Zero jobs with buildable=false.</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>ORPH-8</code></td>
+                <td>No Installed-But-Inactive Plugins</td>
+                <td>All 55 installed plugins report enabled=true AND active=true. Zero plugins are enabled-but-inactive, and zero plugins are disabled. This confirms there are no failed activations from missing dependencies, version conflicts, or an incomplete restart. (Freshness of those plugin versions is a separate concern and is assessed under ORPH-14.)</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>ORPH-9</code></td>
+                <td>No Empty Views</td>
+                <td>Only the built-in &#x27;all&#x27; view exists at the root (hudson.model.AllView, http://localhost:8080/), and it contains 2 items: the folders &#x27;wonderland-dodo&#x27; and &#x27;wonderland-twiddle&#x27;. No user-defined views are configured, so there are no non-built-in views with empty job lists. Observation (not scored under this control): the folder &#x27;wonderland-dodo&#x27; contains its own auto-generated built-in &#x27;all&#x27; view with zero jobs, because the folder itself is empty (jobs=[]). This is an artifact of an empty folder rather than a stray view definition, and is called out for cleanup under ORPH-1.</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><code>ORPH-10</code></td>
+                <td>No Stuck/Blocked Queue Items</td>
+                <td>The build queue is completely empty. GET http://localhost:8080/queue/api/json returned {&quot;_class&quot;:&quot;hudson.model.Queue&quot;,&quot;discoverableItems&quot;:[],&quot;items&quot;:[]} -- zero queued items and therefore zero items carrying a &#x27;why&#x27; (blocked) reason. Consistent with this, the controller reports busyExecutors=0 and all executors idle. Note that an empty queue here reflects an instance with no build activity at all rather than smoothly draining automation; if the tied-agent issue in ORPH-7 is fixed and builds are triggered against the offline &#x27;agent1&#x27; label, items would be expected to accumulate with a &#x27;there are no nodes with the label&#x27; blocked reason -- re-run this control after remediating ORPH-7.</td>
+                <td>N/A</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+    <section>
+      <h2>Prioritized Remediation Roadmap</h2>
+      <div class="remediation-section">
+        <h4>🔴 FAIL — Remediate Immediately</h4>
+        <ul class="control-list">
+          <li><span class="control-id">HTH-1.2</span> — Use Enterprise Authentication (LDAP/SAML/Kerberos)<br/><strong>Fix:</strong> Configure LDAP/SAML/OIDC realm in Manage Jenkins &gt; Security so identity and offboarding are centrally managed</li>
+          <li><span class="control-id">HTH-2.2</span> — Use Fine-Grained Authorization Strategy<br/><strong>Fix:</strong> Switch to Matrix-based, Project-based Matrix, or Role-based authorization and grant least-privilege permissions per user/group</li>
+          <li><span class="control-id">HTH-2.3</span> — Implement Role-Based Access Control<br/><strong>Fix:</strong> Install Role-based Authorization Strategy plugin, define roles (dev/deploy/admin) and assign users/groups to them</li>
+          <li><span class="control-id">HTH-2.4a</span> — Audit Token Has Minimal Privileges<br/><strong>Fix:</strong> Create a dedicated read-only audit account with Overall/Read + job Read only; stop granting all logged-in users admin</li>
+          <li><span class="control-id">HTH-2.4b</span> — Restrict Administrative Access<br/><strong>Fix:</strong> Adopt matrix/role-based authorization and grant Overall/Administer to a minimal, named set of administrators only</li>
+          <li><span class="control-id">HTH-3.2</span> — Disable Builds on Controller<br/><strong>Fix:</strong> Manage Jenkins &gt; Nodes &gt; Built-In Node &gt; Configure: set number of executors to 0 and run all builds on agents</li>
+          <li><span class="control-id">HTH-3.4a</span> — Use HTTPS for Jenkins Transport<br/><strong>Fix:</strong> Terminate TLS at a reverse proxy or configure Jenkins with a valid certificate; redirect HTTP to HTTPS and enable HSTS</li>
+          <li><span class="control-id">HTH-4.2a</span> — Install Credentials Binding Plugin<br/><strong>Fix:</strong> Install Credentials and Credentials Binding plugins and inject secrets via withCredentials instead of plaintext job config</li>
+          <li><span class="control-id">HTH-5.1</span> — Enable Comprehensive Audit Logging<br/><strong>Fix:</strong> Install Audit Trail plugin, configure a log destination (file/syslog) and ship logs to a SIEM with retention</li>
+          <li><span class="control-id">HTH-5.2a</span> — Keep Plugins Current<br/><strong>Fix:</strong> Apply plugin updates in a staged environment, then production; establish a monthly patch cadence tracking Jenkins security advisories</li>
+          <li><span class="control-id">SEC-6</span> — Built-in Node Isolated from Limited-Permission Users<br/><strong>Fix:</strong> Set built-in node executors to 0 (Manage Jenkins -&gt; Nodes -&gt; Built-In Node) and move all builds to agents.</li>
+          <li><span class="control-id">SEC-7a</span> — HTTPS Encryption In Use<br/><strong>Fix:</strong> Terminate TLS at a reverse proxy or enable HTTPS in Jenkins; redirect all HTTP traffic to HTTPS.</li>
+          <li><span class="control-id">SEC-10a</span> — Inbound TCP Agent Port Disabled<br/><strong>Fix:</strong> Set Manage Jenkins -&gt; Security -&gt; TCP port for inbound agents to Disabled, or restrict if inbound agents are required.</li>
+          <li><span class="control-id">ORPH-1</span> — No Never-Built Jobs<br/><strong>Fix:</strong> Determine whether &#x27;wonderland-twiddle/wonderland-twiddledum&#x27; is intended automation. If it is, fix the reason it cannot run: bring the &#x27;agent1&#x27; node online (see ORPH-7) or retarget the job to an available label such as &#x27;built-in&#x27;, then trigger a build to confirm the configuration works. If the job is abandoned, delete it via Job -&gt; Configure -&gt; Delete Project (or DELETE http://localhost:8080/job/wonderland-twiddle/job/wonderland-twiddledum/doDelete). Also delete the empty folder &#x27;wonderland-dodo&#x27; if it is no longer needed.</li>
+          <li><span class="control-id">ORPH-7</span> — No Long-Offline Build Agents<br/><strong>Fix:</strong> Investigate &#x27;agent1&#x27; at http://localhost:8080/computer/agent1/. Because it is an inbound (JNLP) agent, the controller cannot launch it -- determine whether the agent host still exists and whether its agent process is running and can reach the controller on the JNLP port (slaveAgentPort 50000 is open on this controller). If the host is permanently gone, decommission the node: Manage Jenkins -&gt; Nodes -&gt; agent1 -&gt; Delete Agent, and revoke its agent secret so the stale credential cannot be reused to register a rogue executor against this controller. If the agent is still needed, restart the inbound agent process and confirm it reconnects, then rebuild &#x27;wonderland-twiddledum&#x27; to verify. Either way, resolve the label mismatch: the job is tied to &#x27;agent1&#x27; while the node also advertises &#x27;myagent&#x27;, and neither label currently has any online executor.</li>
+          <li><span class="control-id">ORPH-14</span> — Jenkins Core &amp; Plugin Versions Not End-of-Life<br/><strong>Fix:</strong> 1) Upgrade Jenkins core from 2.492.3 to the current supported LTS release, following the LTS upgrade guide and reviewing intervening security advisories at https://www.jenkins.io/security/advisories/ for CVEs affecting 2.492.3. Take a full $JENKINS_HOME backup first. 2) Update all 21 plugins reporting hasUpdate=true via Manage Jenkins -&gt; Plugins -&gt; Updates, then restart the controller and re-run ORPH-8 to confirm every plugin returns active=true after the restart. 3) Check each of ace-editor, handlebars, momentjs, popper-api, popper2-api, handy-uri-templates-2-api, okhttp-api, and javax-mail-api on https://plugins.jenkins.io/ for deprecation notices; deprecated bundle plugins that no longer have a dependent should be uninstalled outright rather than updated. 4) Establish a recurring patch cadence (e.g. monthly plugin updates, LTS core upgrades each quarter) and subscribe to the Jenkins security advisory mailing list so EOL drift is caught before it accumulates.</li>
+          <li><span class="control-id">CICD-SEC-2</span> — Inadequate Identity and Access Management<br/><strong>Fix:</strong> Install and configure the Audit Trail plugin, forward logs to a SIEM, and perform a manual review of user accounts and permission grants.</li>
+          <li><span class="control-id">CICD-SEC-3</span> — Dependency Chain Abuse<br/><strong>Fix:</strong> Update all 21 outdated plugins, upgrade core to the current LTS, and establish a recurring patch/vulnerability-scan cycle for plugins.</li>
+          <li><span class="control-id">CICD-SEC-4</span> — Poisoned Pipeline Execution<br/><strong>Fix:</strong> Install the Credentials Binding plugin, restrict who can approve scripts, and review Jenkinsfiles/pending script approvals for injection paths.</li>
+          <li><span class="control-id">CICD-SEC-5</span> — Insufficient PBAC (Pipeline-Based Access Control)<br/><strong>Fix:</strong> Install Matrix or Role-based Authorization Strategy, define least-privilege per-job/folder permissions, and scope credentials to folders.</li>
+          <li><span class="control-id">CICD-SEC-6</span> — Insufficient Credential Hygiene<br/><strong>Fix:</strong> Install Credentials Binding and Audit Trail plugins, store all secrets in the credentials store with folder scope, and enforce rotation.</li>
+          <li><span class="control-id">CICD-SEC-7</span> — Insecure System Configuration<br/><strong>Fix:</strong> Terminate TLS in front of Jenkins and force HTTPS; disable the inbound agent port (set to Disabled) or restrict it to a fixed, firewalled port.</li>
+          <li><span class="control-id">CICD-SEC-10</span> — Insufficient Logging and Visibility<br/><strong>Fix:</strong> Install and enable the Audit Trail plugin, configure log targets with retention, and forward CI/CD events to a SIEM with alerting.</li>
+        </ul>
+      </div>
+      <div class="remediation-section">
+        <h4>📋 MANUAL — Requires Human Review</h4>
+        <ul class="control-list">
+          <li><span class="control-id">HTH-3.3</span> — Use Ephemeral Cloud-Based Agents<br/><strong>Evidence:</strong> No clouds configured (Jenkins.clouds=[]); single static permanent agent &#x27;agent1&#x27; (hudson.slaves.DumbSlave), currently offline</li>
+          <li><span class="control-id">HTH-3.5</span> — Prefer WebSocket for Inbound Agents<br/><strong>Evidence:</strong> agent1 is an inbound JNLP agent (jnlpAgent=true) using TCP port 50000; agent-side WebSocket flag not exposed via REST</li>
+          <li><span class="control-id">HTH-4.2b</span> — Use Appropriate Credential Types &amp; Scoping<br/><strong>Evidence:</strong> Credentials subsystem not installed, so no credential store can be enumerated; secrets may instead be embedded in job config/env</li>
+          <li><span class="control-id">HTH-4.4</span> — Enforce Hardened Jenkinsfile Patterns<br/><strong>Evidence:</strong> Only job is freestyle &#x27;wonderland-twiddle/wonderland-twiddledum&#x27;; no pipeline/workflow-job plugins, so no Jenkinsfiles to inspect via API</li>
+          <li><span class="control-id">HTH-5.2b</span> — Maintain Supported Jenkins Version<br/><strong>Evidence:</strong> X-Jenkins header reports version 2.492.3 (LTS line); currency vs latest LTS/advisories cannot be validated offline</li>
+          <li><span class="control-id">SEC-2b</span> — Authorization Strategy Is Restrictive (Not &quot;Legacy Mode&quot;)<br/><strong>Evidence:</strong> REST API does not expose the authorization strategy class name.</li>
+          <li><span class="control-id">SEC-5b</span> — Admin Access Limited<br/><strong>Evidence:</strong> REST API cannot enumerate all users and their effective permissions.</li>
+          <li><span class="control-id">SEC-7b</span> — Reverse Proxy Hardening<br/><strong>Evidence:</strong> Reverse proxy presence/configuration is not detectable via REST API.</li>
+          <li><span class="control-id">SEC-9</span> — API Clients Use API Token Authentication<br/><strong>Evidence:</strong> Scripted/programmatic integrations cannot be enumerated via REST API.</li>
+          <li><span class="control-id">SEC-10b</span> — Agent Protocol &amp; Firewall Correctly Restricted<br/><strong>Evidence:</strong> Inbound TCP port 50000 is enabled with an inbound agent (agent1); enabled protocols not exposed via REST API.</li>
+          <li><span class="control-id">ORPH-4</span> — Build Retention Policy Configured<br/><strong>Evidence:</strong> MANUAL — audit each job&#x27;s configuration page for a configured &quot;Discard Old Builds&quot; policy (pipeline: `discarder`, freestyle: &quot;Build Discarder&quot; in job config). Jobs without a retention policy are a hygiene risk. The REST API does not expose per-job retention policies in bulk. Scope note for this instance: only one job exists (&#x27;wonderland-twiddle/wonderland-twiddledum&#x27;), so the manual review is a single-job task.</li>
+          <li><span class="control-id">ORPH-5</span> — Dormant User Accounts Reviewed<br/><strong>Evidence:</strong> MANUAL — treat the full user roster returned by jenkins_api.py people as a starting point, not a verdict. The `lastChange` field is incomplete (many active accounts show null). Cross-reference this list against your actual Jenkins usage logs (if available via the Audit Trail plugin or external logging) to identify truly dormant accounts, then review them against Manage Jenkins -&gt; Users for disablement. ADDITIONAL LIMITATION OBSERVED IN THIS INSTANCE: the user roster could not be retrieved at all. `jenkins_api.py people` returned {&quot;status&quot;:&quot;error&quot;,&quot;message&quot;:&quot;HTTP 404&quot;}, and direct probes of http://localhost:8080/asynchPeople/api/json, http://localhost:8080/asynchPeople/ and http://localhost:8080/people/api/json all returned HTTP 404 (Jenkins &#x27;Not Found&#x27; page, not a 403 permission error) on Jenkins core 2.492.3. The per-user endpoint does work (http://localhost:8080/securityRealm/user/pwned/api/json returns HTTP 200), so individual accounts are readable but the roster listing endpoint is unavailable on this version. The authenticated audit account is &#x27;pwned&#x27; with authorities [&#x27;authenticated&#x27;] only (not a member of any admin group per /whoAmI), so a permission restriction cannot be fully ruled out as a contributing factor.</li>
+          <li><span class="control-id">ORPH-6</span> — Jobs Reference Live SCM Sources<br/><strong>Evidence:</strong> MANUAL — audit job configurations for SCM sources (Git, Svn, Perforce, etc.). Verify that each repository URL is still reachable and the repository has not been archived or deleted. The REST API does not expose or verify job SCM configurations. Context for this instance: no SCM plugins are installed (the 55-plugin inventory contains no git, git-client, subversion, or perforce plugin), which strongly suggests the single job &#x27;wonderland-twiddle/wonderland-twiddledum&#x27; has SCM set to &#x27;None&#x27; -- but this must be confirmed by inspecting the job configuration directly.</li>
+          <li><span class="control-id">ORPH-11</span> — Multibranch Pipeline Branches Reference Live SCM Branches<br/><strong>Evidence:</strong> MANUAL — for any multibranch or organization-folder pipelines, audit the indexed branches (visible in the Multibranch Pipeline view) against the actual SCM repository. Delete branch jobs if the SCM branch no longer exists. The REST API cannot cross-reference indexed branches against live SCM without per-job API calls outside this audit&#x27;s scope. Context for this instance: the job tree contains no multibranch or organization-folder items -- the only classes present are com.cloudbees.hudson.plugins.folder.Folder (x2) and hudson.model.FreeStyleProject (x1). The plugin inventory also contains no workflow-multibranch, branch-api, or workflow-job plugin, so multibranch indexing is not currently possible on this controller. The manual check is therefore expected to be a no-op today, but should be repeated if multibranch pipelines are introduced.</li>
+          <li><span class="control-id">ORPH-12</span> — Dormant Admin-Privileged Accounts Reviewed<br/><strong>Evidence:</strong> MANUAL — cross-reference the dormant user list from ORPH-5 (using the caveat that lastChange is incomplete) against Manage Jenkins -&gt; Security -&gt; Authorization. Identify which dormant accounts (if any) hold Overall/Administer permission. These are higher-severity targets for review and disablement. The REST API cannot enumerate per-user permissions without a role-strategy-specific endpoint. Blocking limitation in this instance: the ORPH-5 user roster could not be retrieved (all roster endpoints returned HTTP 404 on Jenkins core 2.492.3), so there is no list to cross-reference. What is known: the audit account &#x27;pwned&#x27; authenticates successfully and /whoAmI reports authorities=[&#x27;authenticated&#x27;] with no admin group membership, and GET http://localhost:8080/manage returns HTTP 302 (redirect) rather than a 200 admin page for this account. No role-strategy plugin (e.g. role-strategy, matrix-auth) appears in the 55-plugin inventory, which suggests a simple authorization strategy is in force.</li>
+          <li><span class="control-id">ORPH-13</span> — Unused/Orphaned Credentials<br/><strong>Evidence:</strong> MANUAL — cross-reference the credential domains returned by jenkins_api.py credentials against actual job configurations. Identify credentials that are not referenced by any active job, and delete or archive them if they are no longer needed. The REST API metadata does not expose which credentials are referenced by which jobs. Findings for this instance: no credential store could be enumerated. `jenkins_api.py credentials` returned {&quot;status&quot;:&quot;error&quot;,&quot;message&quot;:&quot;HTTP 404&quot;}, and direct probes of http://localhost:8080/credentials/store/system/api/json and http://localhost:8080/credentials/store/system/domain/_/api/json returned HTTP 404 (Jenkins &#x27;Not Found&#x27; page, not 403). The cause appears structural rather than permission-based: the Credentials plugin is NOT installed -- no plugin whose shortName contains &#x27;credential&#x27; appears among the 55 installed plugins (no &#x27;credentials&#x27;, &#x27;credentials-binding&#x27;, &#x27;plain-credentials&#x27;, or &#x27;ssh-credentials&#x27;). With no credentials plugin, there is no credential store to hold orphaned credentials.</li>
+          <li><span class="control-id">CICD-SEC-1</span> — Insufficient Flow Control Mechanisms<br/><strong>Evidence:</strong> REST exposes only 2 folders (wonderland-dodo, wonderland-twiddle); approval gates, trigger restrictions and SCM branch protection are not queryable.</li>
+          <li><span class="control-id">CICD-SEC-8</span> — Ungoverned Usage of 3rd Party Services<br/><strong>Evidence:</strong> No GitHub/GitLab/AWS/Azure/Docker/Artifactory/Slack plugins found; integration-capable plugins present: mcp-server, job-dsl, sse-gateway, pubsub-light, sshd.</li>
+          <li><span class="control-id">CICD-SEC-9</span> — Improper Artifact Integrity Validation<br/><strong>Evidence:</strong> Artifact checksum/signature/provenance handling is not exposed via REST; no artifact-signing plugin present among the 55 installed.</li>
+        </ul>
+      </div>
+    </section>
+    <footer>
+      <h3>Audit Methodology</h3>
+      <p>This report was generated by auditing a Jenkins instance against four independent security benchmarks and operational hygiene rulesets:</p>
+      <ul>
+        <li><strong>howtoharden.com Hardening Guide</strong> — <a href="https://howtoharden.com/guides/jenkins/">https://howtoharden.com/guides/jenkins/</a></li>
+        <li><strong>Jenkins.io Official Security</strong> — <a href="https://www.jenkins.io/doc/book/security/">https://www.jenkins.io/doc/book/security/</a></li>
+        <li><strong>OWASP Top 10 CI/CD Security Risks</strong> — <a href="https://owasp.org/www-project-top-10-ci-cd-security-risks/">https://owasp.org/www-project-top-10-ci-cd-security-risks/</a></li>
+        <li><strong>CI/CD Resource Lifecycle Hygiene</strong> — Custom operational hygiene ruleset (see checklist for sources: CIS, OWASP, Jenkins.io, team best practices)</li>
+      </ul>
+      <p><strong>Schema Version:</strong> 1.0</p>
+      <p><strong>Report Generated:</strong> 2026-08-17T04:32:00Z (UTC)</p>
+    </footer>
+  </div>
+</body>
+</html>
