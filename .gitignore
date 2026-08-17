@@ -1,3 +1,6 @@
+# Claude
+.claude/settings.local.json
+
 # Environment variables (contains secrets)
 .env
 .env.local

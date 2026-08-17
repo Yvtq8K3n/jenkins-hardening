@@ -30,6 +30,9 @@ This system consists of:
         └── Orphaned jobs, stale pipelines, dormant accounts (14 controls)
 ```
 
+### Agentic Team in Action
+
+![Agentic Team Output](images/team_output.png)
 
 ## Quick Start
 
@@ -119,6 +122,10 @@ Each finding includes:
 - **Status** — PASS (compliant), FAIL (automated check reveals gap), or MANUAL (requires manual verification / code review)
 - **Evidence** — Concrete data gathered or reason for MANUAL status
 - **Remediation** — Specific remediation steps for FAIL; guidance for completing MANUAL review; "N/A" for PASS
+
+### Example Report
+
+![Report Example](images/report_example.png)
 
 ## Agent Isolation
 
